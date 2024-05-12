@@ -30,6 +30,11 @@ class SQLQuery:
         return query
 
 
+# CONN STRING FOR SERVERS
+Server1 = DBConnString(os.environ['AZURE_SERVER'], os.environ['AZURE_DATABASE'], os.environ['AZURE_SERVER_USERNAME'],
+                       os.environ['AZURE_DB_PASSWORD'], '{ODBC Driver 18 for SQL Server}')
+
+# QUERIES FOR CREATING EMPTY TABLES
 tquery_objectives = SQLQuery(table_name='objectives_completed',
                              main_objectives='INT',
                              optional_objectives='INT',
@@ -66,10 +71,6 @@ tquery_combat = SQLQuery(table_name='combat',
                          friendly_fire_damage='INT',
                          distance_travelled='INT',
                          ).generate_query()
-
-# Create more connection string for other dbs or servers if You have them
-Server1 = DBConnString(os.environ['AZURE_SERVER'], os.environ['AZURE_DATABASE'], os.environ['AZURE_SERVER_USERNAME'],
-                       os.environ['AZURE_DB_PASSWORD'], '{ODBC Driver 18 for SQL Server}')
 
 
 def connect(conn_string):
@@ -139,7 +140,31 @@ def query_delete_row(table_name: str, row_number: int) -> None:
         connect().close()
 
 
+def query_get_table_names() -> None:
+    try:
+        sql_query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'"
+        with connect.cursor() as cursor:
+            cursor.execute(sql_query)
+            table_names = [row.TABLE_NAME for row in cursor.fetchall()]
+
+        if table_names:
+            print("Table names:")
+            for table_name in table_names:
+                print(table_name)
+        else:
+            print("No tables found.")
+
+    except pyodbc.Error as e:
+        print(f"Error executing SQL query: {e}")
+
+    finally:
+        connect().close()
+
+
 if __name__ == "__main__":
-    query_tables = [tquery_objectives, tquery_samples, tquery_currency, tquery_samples]
-    query_create_tables(Server1, query_tables)
+    query_get_table_names()
+
+    # query_tables = [tquery_objectives, tquery_samples, tquery_currency, tquery_samples]
+    # query_create_tables(Server1, query_tables)
+
     # query_delete_table('Employee')

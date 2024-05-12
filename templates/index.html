@@ -5,7 +5,6 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../static/files/style.css" />
-        <!--<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='files/style.css')}}" />-->
         <title>Link CSS to HTML</title>
     </head>
 
@@ -30,20 +29,21 @@
                             <a href="{{ url_for('input') }}">Input round info</a>
                         </li>
                         <li>
+                            <a href="{{ url_for('dive') }}">Dive</a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('all_dives') }}">All dives</a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('display_table') }}">Display table</a>
+                        </li>
+                        <li>
                             <a href="{{ url_for('data') }}">Data</a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('all_matches') }}">All matches</a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('match') }}">Match</a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('round') }}">Round</a>
                         </li>
                         <li>
                             <a href="{{ url_for('about') }}">About</a>
                         </li>
+
                     </ul>
                 </div>
             </div>
