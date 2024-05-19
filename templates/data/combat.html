@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Table</title>
+    <title>combat Table</title>
     <style>
         table {
             border-collapse: collapse;
@@ -33,16 +33,10 @@
 </table>
 
 <script>
-    // Sample data for demonstration
-    // HERE PUT THE SCRIPT TO SERVE DATA FROM THE AZURE WEB SERVER INSTEAD OF STATIC DATA 
-    var data = [
-        ["Name", "Age", "Gender"],
-        ["John", 30, "Male"],
-        ["Alice", 25, "Female"],
-        ["Bob", 35, "Male"]
-    ];
+    fetch('/data/combat')
+        .then(response => response.json())
+        .then(data => generateTable(data));
 
-    // Function to dynamically generate the table
     function generateTable(data) {
         var table = document.getElementById("dynamicTable");
         var headerRow = document.getElementById("headerRow");
@@ -70,9 +64,6 @@
             tableBody.appendChild(row);
         }
     }
-
-    // Call the function with the sample data
-    generateTable(data);
 </script>
 
 </body>
