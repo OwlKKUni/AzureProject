@@ -23,8 +23,6 @@ def about():
 
 @app.route("/all_dives")
 def all_dives():
-    # data = get_data_from_sql()
-    # return render_template("index.html", data = data)
     return render_template("all_dives.html")
 
 
@@ -32,21 +30,25 @@ def all_dives():
 def data():
     return render_template("data.html")
 
+
 @app.route("/data/combat")
-def data():
-    return render_template("data.html")
+def data_combat():
+    return render_template("combat.html")
+
 
 @app.route("/data/currency_gained")
-def data():
-    return render_template("data.html")
+def data_currency():
+    return render_template("currency_gained.html")
+
 
 @app.route("/data/objectives")
-def data():
-    return render_template("data.html")
+def data_objectives():
+    return render_template("objectives_completed.html")
 
-@app.route("/data")
-def data():
-    return render_template("data.html")
+
+@app.route("/data/samples")
+def data_samples():
+    return render_template("samples_gained.html")
 
 
 # This works statically
