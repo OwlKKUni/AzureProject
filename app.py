@@ -23,11 +23,6 @@ def all_dives():
     return render_template('all_dives.html')
 
 
-@app.route('/display_table')
-def display_table():
-    return render_template('display_table.html')
-
-
 @app.route('/data')
 def data():
     return render_template('data.html')
