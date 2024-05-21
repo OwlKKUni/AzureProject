@@ -180,8 +180,6 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
 
 # UPDATE TABLES ----------------------------
 # test this if it works
-
-# added () in q_update_cell after execute sql_query
 def query_update_cell(server_name: DBConnString, table_name: str,
                       column_name: str, row_number: int, value: any) -> None:
     sql_query = f"UPDATE {table_name} SET {column_name} = {value} WHERE {row_number} = ?"
