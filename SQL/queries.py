@@ -101,17 +101,12 @@ def query_create_tables(server_name: DBConnString, table_queries: list) -> None:
     except pyodbc.Error as e:
         print(f"Error creating data: {e}")
 
-    finally:
-        if connect(server_name):
-            connect(server_name).close()
-
 
 # READ TABLES ----------------------------
 def query_read_row(server_name: DBConnString, table: str, row_number: int) -> None:
     with connect(server_name).cursor as cursor:
         row = cursor.execute(f'SELECT * FROM {table} WHERE rowid = ?', (row_number,))
         print(row)
-        connect(server_name).close()
 
 
 def query_read_table(server_name: DBConnString, table: str) -> None:
@@ -120,7 +115,6 @@ def query_read_table(server_name: DBConnString, table: str) -> None:
         rows = cursor.fetchall()
         for row in rows:
             print(row)
-        connect(server_name).close()
 
 
 # GET ----------------------------
@@ -146,9 +140,6 @@ def query_get_table_names(server_name: DBConnString):
         print(f"Error executing SQL query: {e}")
         return []
 
-    finally:
-        connect(server_name).close()
-
     # returns: [['id', 'kills', 'accuracy', 'shots_fired', 'deaths', 'stims_used',
     # 'accidentals', 'samples_extracted', 'stratagems_used', 'melee_kills',
     # 'times_reinforcing_', 'friendly_fire_damage', 'distance_travelled']]
@@ -164,7 +155,6 @@ def query_get_table_column_names(server_name: DBConnString, table: str) -> list:
         data.append(columns)
         for row in rows:
             data.append(list(row))
-        connect(server_name).close()
     return data
 
 
@@ -174,7 +164,6 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
         cursor.execute(f"SELECT * FROM {table}")
         rows = cursor.fetchall()
         data = [columns] + [list(row) for row in rows]
-        connect(server_name).close()
         return data
 
 
@@ -188,8 +177,8 @@ def query_update_cell(server_name: DBConnString, table_name: str,
         with connect(server_name).cursor as cursor:
             cursor.execute(sql_query, (value, row_number))
             connect(server_name).commit()
-            connect(server_name).close()
         print(f'Table "{table_name}" updated')
+
     except pyodbc.Error as e:
         print(f"Error updating table '{table_name}': {e}")
     except Exception as e:
@@ -206,11 +195,9 @@ def query_delete_all_tables(server_name: DBConnString):
                 query_delete_table(server_name, table_name)
         else:
             print("No data found to delete.")
+
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
-    finally:
-        connect(server_name).close()
 
 
 # WORKS
@@ -221,15 +208,12 @@ def query_delete_table(server_name: DBConnString, table_name: str) -> None:
         with connect(server_name).cursor() as cursor:
             cursor.execute(sql_query)
             connect(server_name).commit()
-            connect(server_name).close()
         print(f'Table "{table_name}" deleted')
+
     except pyodbc.Error as e:
         print(f"Error deleting table '{table_name}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-
-    finally:
-        connect(server_name).close()
 
 
 def query_delete_row(server_name: DBConnString, table_name: str, row_number: int) -> None:
@@ -238,14 +222,57 @@ def query_delete_row(server_name: DBConnString, table_name: str, row_number: int
     with connect(server_name).cursor() as cursor:
         cursor.execute(sql_query)
         connect(server_name).commit()
-        connect(server_name).close()
 
 
-# PUT ----------------------------
-#
+def query_put_row(server_name: DBConnString, table_name: str, **kwargs) -> None:
+    # Extract columns and values from kwargs
+    columns = ', '.join(kwargs.keys())
+    values_placeholders = ', '.join(['?'] * len(kwargs))
+    values = tuple(kwargs.values())
+
+    sql_query = f"INSERT INTO {table_name} ({columns}) VALUES ({values_placeholders})"
+
+    try:
+        with connect(server_name).cursor() as cursor:
+            cursor.execute(sql_query, values)
+            connect(server_name).commit()
+        print(f"Row inserted into table '{table_name}'")
+
+    except pyodbc.Error as e:
+        print(f"Error inserting row into table '{table_name}': {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 
 # Aux functions ------------------------
+def get_last_id_value(server_name: DBConnString, table_name: str) -> int:
+    sql_query = f"SELECT id FROM {table_name} ORDER BY id DESC LIMIT 1"
+    try:
+        with connect(server_name).cursor() as cursor:
+            cursor.execute(sql_query)
+            result = cursor.fetchone()
+            return result[0] if result else None
+
+    except pyodbc.Error as e:
+        print(f"Error occurred: {e}")
+        return None
 
 
 if __name__ == "__main__":
-    print(query_get_data_from_table(Server1, 'combat'))
+    # print(query_get_table_column_names(Server1, 'combat'))
+
+    print(query_get_data_from_table(Server1, 'objectives_completed'))
+
+    # W O R K S + handles duplicate keys
+    # query_put_row(Server1, 'objectives_completed',
+    #               id=2,
+    #               main_objectives=2,
+    #               optional_objectives=2,
+    #               helldivers_extracted=2,
+    #               outposts_destroyed_light=2,
+    #               outposts_destroyed_medium=2,
+    #               outposts_destoryed_heavy=2,
+    #               mission_time_remaining='00:22:22')
+
+# Kurwa, automatyczne przydzielanie Id muszę zrobić,
+# ALBO, NADPISYWANIE W PUT'CIE
