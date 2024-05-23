@@ -22,11 +22,21 @@
         <div class="content_div">
             <div class="navi">
                 <ul>
-                    <li><a href="{{ url_for('input') }}">Input round info</a></li>
+                    <li class="dropdown">
+                        <a class="dropbtn">Input round info</a>
+                        <div class="dropdown-content">
+                            <a href="{{ url_for('data_option5') }}">Combat</a>
+                            <a href="{{ url_for('data_option6') }}">Currency gained</a>
+                            <a href="{{ url_for('data_option7') }}">Objectives completed</a>
+                            <a href="{{ url_for('data_option8') }}">Samples gained</a>
+                        </div>
+                    </li>
+
                     <li><a href="{{ url_for('dive') }}">Dive</a></li>
                     <li><a href="{{ url_for('all_dives') }}">All dives</a></li>
+
                     <li class="dropdown">
-                        <a href="{{ url_for('data') }}" class="dropbtn">Data</a>
+                        <a class="dropbtn">Data</a>
                         <div class="dropdown-content">
                             <a href="{{ url_for('data_option1') }}">Combat</a>
                             <a href="{{ url_for('data_option2') }}">Currency gained</a>
@@ -34,6 +44,7 @@
                             <a href="{{ url_for('data_option4') }}">Samples gained</a>
                         </div>
                     </li>
+
                     <li><a href="{{ url_for('about') }}">About</a></li>
                 </ul>
             </div>

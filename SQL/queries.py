@@ -169,6 +169,10 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
 
 # UPDATE TABLES ----------------------------
 # test this if it works
+def query_update_row():
+    pass
+
+
 def query_update_cell(server_name: DBConnString, table_name: str,
                       column_name: str, row_number: int, value: any) -> None:
     sql_query = f"UPDATE {table_name} SET {column_name} = {value} WHERE {row_number} = ?"
@@ -245,8 +249,8 @@ def query_put_row(server_name: DBConnString, table_name: str, **kwargs) -> None:
 
 
 # Aux functions ------------------------
-def get_last_id_value(server_name: DBConnString, table_name: str) -> int:
-    sql_query = f"SELECT id FROM {table_name} ORDER BY id DESC LIMIT 1"
+def query_get_last_id_value(server_name: DBConnString, table_name: str) -> int:
+    sql_query = f"SELECT TOP 1 id FROM {table_name} ORDER BY id DESC"
     try:
         with connect(server_name).cursor() as cursor:
             cursor.execute(sql_query)
@@ -259,20 +263,4 @@ def get_last_id_value(server_name: DBConnString, table_name: str) -> int:
 
 
 if __name__ == "__main__":
-    # print(query_get_table_column_names(Server1, 'combat'))
-
-    print(query_get_data_from_table(Server1, 'objectives_completed'))
-
-    # W O R K S + handles duplicate keys
-    # query_put_row(Server1, 'objectives_completed',
-    #               id=2,
-    #               main_objectives=2,
-    #               optional_objectives=2,
-    #               helldivers_extracted=2,
-    #               outposts_destroyed_light=2,
-    #               outposts_destroyed_medium=2,
-    #               outposts_destoryed_heavy=2,
-    #               mission_time_remaining='00:22:22')
-
-# Kurwa, automatyczne przydzielanie Id muszę zrobić,
-# ALBO, NADPISYWANIE W PUT'CIE
+    pass
