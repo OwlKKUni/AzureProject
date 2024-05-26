@@ -64,31 +64,101 @@ def data_option8():
     return render_template('inputs/input_samples_gained.html')
 
 
-@app.route('/submit_data_objectives', methods=['POST'])
-# Get last id, assign id column number
-def submit_data_objectives():
+@app.route('/submit_data_combat', methods=['POST'])
+def submit_data_combat():
     # Extract form data
-    id_ = query_get_last_id_value(Server1, 'objectives_completed',)
+    id_ = query_get_last_id_value(Server1, 'combat')
+    kills = request.form['kills']
+    accuracy = request.form['accuracy']
+    shots_fired = request.form['shots_fired']
+    deaths = request.form['deaths']
+    stims_used = request.form['stims_used']
+    accidentals = request.form['accidentals']
+    samples_extracted = request.form['samples_extracted']
+    stratagems_used = request.form['stratagems_used']
+    melee_kills = request.form['melee_kills']
+    times_reinforcing = request.form['times_reinforcing']
+    friendly_fire_damage = request.form['friendly_fire_damage']
+    distance_travelled = request.form['distance_travelled']
+
+    # Insert data into the database
+    query_put_row(Server1, 'combat',
+                  id=int(id_) + 1 if id_ else 1,
+                  kills=int(kills),
+                  accuracy=float(accuracy),
+                  shots_fired=int(shots_fired),
+                  deaths=int(deaths),
+                  stims_used=int(stims_used),
+                  accidentals=int(accidentals),
+                  samples_extracted=int(samples_extracted),
+                  stratagems_used=int(stratagems_used),
+                  melee_kills=int(melee_kills),
+                  times_reinforcing=int(times_reinforcing),
+                  friendly_fire_damage=int(friendly_fire_damage),
+                  distance_travelled=int(distance_travelled))
+
+    return 'Combat data submitted successfully'
+
+
+@app.route('/submit_data_currency_gained', methods=['POST'])
+def submit_data_currency_gained():
+    id_ = query_get_last_id_value(Server1, 'currency_gained')
+    requisition = request.form['requisition']
+    medals = request.form['medals']
+    xp = request.form['xp']
+
+    # Insert data into the database
+    query_put_row(Server1, 'currency_gained',
+                  id=int(id_) + 1 if id_ else 1,
+                  requisition=int(requisition),
+                  medals=int(medals),
+                  xp=int(xp))
+
+    return 'Currency gained data submitted successfully'
+
+
+@app.route('/submit_data_objectives_completed', methods=['POST'])
+def submit_data_objectives_completed():
+    # Extract form data
+    id_ = query_get_last_id_value(Server1, 'objectives_completed')
     main_objectives = request.form['main_objectives']
     optional_objectives = request.form['optional_objectives']
     helldivers_extracted = request.form['helldivers_extracted']
     outposts_destroyed_light = request.form['outposts_destroyed_light']
     outposts_destroyed_medium = request.form['outposts_destroyed_medium']
-    outposts_destoryed_heavy = request.form['outposts_destroyed_heavy']
+    outposts_destroyed_heavy = request.form['outposts_destroyed_heavy']
     mission_time_remaining = request.form['mission_time_remaining']
 
     # Insert data into the database
     query_put_row(Server1, 'objectives_completed',
-                  id=int(id_) + 1,
+                  id=int(id_) + 1 if id_ else 1,
                   main_objectives=int(main_objectives),
                   optional_objectives=int(optional_objectives),
                   helldivers_extracted=int(helldivers_extracted),
                   outposts_destroyed_light=int(outposts_destroyed_light),
                   outposts_destroyed_medium=int(outposts_destroyed_medium),
-                  outposts_destoryed_heavy=int(outposts_destoryed_heavy),
+                  outposts_destroyed_heavy=int(outposts_destroyed_heavy),
                   mission_time_remaining=mission_time_remaining)
 
-    return 'Data submitted successfully'
+    return 'Objectives completed data submitted successfully'
+
+
+@app.route('/submit_data_samples_gained', methods=['POST'])
+def submit_data_samples_gained():
+    # Extract form data
+    id_ = query_get_last_id_value(Server1, 'samples_gained')
+    green_samples = request.form['green_samples']
+    orange_samples = request.form['orange_samples']
+    violet_samples = request.form['violet_samples']
+
+    # Insert data into the database
+    query_put_row(Server1, 'samples_gained',
+                  id=int(id_) + 1 if id_ else 1,
+                  green_samples=int(green_samples),
+                  orange_samples=int(orange_samples),
+                  violet_samples=int(violet_samples))
+
+    return 'Samples gained data submitted successfully'
 
 
 @app.route('/about')

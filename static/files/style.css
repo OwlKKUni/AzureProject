@@ -28,7 +28,7 @@ header {
 }
 
 .navi ul li {
-    display: inline-block; /*was inline*/
+    display: inline-block; /* was inline */
     margin-right: 10px;
     position: relative; /* Necessary for dropdown positioning */
 }
@@ -112,4 +112,12 @@ header {
 
 .back-button:hover {
     background-color: #555;
+}
+
+.button-row {
+    margin-top: 20px;
+}
+.button-row form {
+    display: inline-block;
+    margin-right: 10px;
 }
