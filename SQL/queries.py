@@ -42,7 +42,7 @@ tquery_objectives = SQLQuery(table_name='objectives_completed',
                              helldivers_extracted='INT',
                              outposts_destroyed_light='INT',
                              outposts_destroyed_medium='INT',
-                             outposts_destoryed_heavy='INT',
+                             outposts_destroyed_heavy='INT',
                              mission_time_remaining='TIME'
                              ).generate_query()
 
