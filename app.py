@@ -16,32 +16,59 @@ def input():
 
 @app.route('/dive')
 def dive():
-    return render_template('dive.html')
+    table_names = query_get_table_names(Server1)
+
+    max_id = max(query_get_last_id_value(Server1, table)
+                 for table in table_names)  # global max id of record in any of the 4 tables
+
+    data = {}
+    for table in table_names:
+        data[table] = query_get_data_by_id(Server1, table, max_id)
+
+    return render_template('dive.html', data=data, max_id=max_id)
 
 
 @app.route('/all_dives')
 def all_dives():
-    return render_template('all_dives.html')
+    table_names = query_get_table_names(Server1)
+
+    data = {}
+    for table in table_names:
+        data[table] = query_get_data_from_table(Server1, table)
+
+    return render_template('all_dives.html', data=data)
 
 
 @app.route('/combat')
 def data_option1():
-    return render_template('data/combat.html')
+    data = query_get_data_from_table(Server1, 'combat')
+    columns = data[0]  # Column names
+    rows = data[1:]  # Data rows
+    return render_template('data/combat.html', columns=columns, data=rows)
 
 
 @app.route('/currency_gained')
 def data_option2():
-    return render_template('data/currency_gained.html')
+    data = query_get_data_from_table(Server1, 'currency_gained')
+    columns = data[0]
+    rows = data[1:]
+    return render_template('data/currency_gained.html', columns=columns, rows=rows)
 
 
 @app.route('/objectives_completed')
 def data_option3():
-    return render_template('data/objectives_completed.html')
+    data = query_get_data_from_table(Server1, 'objectives_completed')
+    columns = data[0]
+    rows = data[1:]
+    return render_template('data/objectives_completed.html', columns=columns, rows=rows)
 
 
 @app.route('/samples_gained')
 def data_option4():
-    return render_template('data/samples_gained.html')
+    data = query_get_data_from_table(Server1, 'samples_gained')
+    columns = data[0]
+    rows = data[1:]
+    return render_template('data/samples_gained.html', columns=columns, rows=rows)
 
 
 @app.route('/input_combat')

@@ -140,10 +140,6 @@ def query_get_table_names(server_name: DBConnString):
         print(f"Error executing SQL query: {e}")
         return []
 
-    # returns: [['id', 'kills', 'accuracy', 'shots_fired', 'deaths', 'stims_used',
-    # 'accidentals', 'samples_extracted', 'stratagems_used', 'melee_kills',
-    # 'times_reinforcing_', 'friendly_fire_damage', 'distance_travelled']]
-
 
 # WORKS
 def query_get_table_column_names(server_name: DBConnString, table: str) -> list:
@@ -158,10 +154,11 @@ def query_get_table_column_names(server_name: DBConnString, table: str) -> list:
     return data
 
 
+#
 def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
-    columns = query_get_table_column_names(server_name, table)
     with connect(server_name).cursor() as cursor:
         cursor.execute(f"SELECT * FROM {table}")
+        columns = [column[0] for column in cursor.description]
         rows = cursor.fetchall()
         data = [columns] + [list(row) for row in rows]
         return data
@@ -262,5 +259,20 @@ def query_get_last_id_value(server_name: DBConnString, table_name: str) -> int:
         return None
 
 
+# dict {columns: [], rows: [()]}
+def query_get_data_by_id(server_name: DBConnString, table: str, id_value: int) -> dict:
+    data = {
+        "columns": [],
+        "rows": []
+    }
+    with connect(server_name).cursor() as cursor:
+        cursor.execute(f'SELECT * FROM {table} WHERE id = {id_value}')
+        columns = [column[0] for column in cursor.description]
+        rows = cursor.fetchall()
+        data["columns"] = columns
+        data["rows"] = [row for row in rows]
+    return data
+
+
 if __name__ == "__main__":
-    pass
+    print(query_get_data_by_id(Server1, 'objectives_completed', 1))
