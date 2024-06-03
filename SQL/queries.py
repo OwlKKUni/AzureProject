@@ -1,7 +1,5 @@
 import os
 import pyodbc
-import random
-import datetime
 
 
 class DBConnString:
@@ -32,8 +30,11 @@ class SQLQuery:
 
 
 # CONN STRING FOR SERVERS
-Server1 = DBConnString(os.environ['AZURE_SERVER'], os.environ['AZURE_DATABASE'], os.environ['AZURE_SERVER_USERNAME'],
-                       os.environ['AZURE_DB_PASSWORD'], '{ODBC Driver 18 for SQL Server}')
+Server1 = DBConnString(os.environ['AZURE_SERVER'],
+                       os.environ['AZURE_DATABASE'],
+                       os.environ['AZURE_SERVER_USERNAME'],
+                       os.environ['AZURE_DB_PASSWORD'],
+                       '{ODBC Driver 18 for SQL Server}')
 
 # QUERIES FOR CREATING EMPTY TABLES
 tquery_objectives = SQLQuery(table_name='objectives_completed',
@@ -77,15 +78,16 @@ tquery_combat = SQLQuery(table_name='combat',
 def connect(conn_string):
     try:
         conn = pyodbc.connect(f'DRIVER={conn_string.driver};SERVER={conn_string.server};'
-                              f'DATABASE={conn_string.database};UID={conn_string.username};PWD={conn_string.password}')
+                              f'DATABASE={conn_string.database};UID={conn_string.username};'
+                              f'PWD={conn_string.password}')
         return conn
     except pyodbc.Error as e:
         print(f"Error connecting to the database: {e}")
         return None
 
 
-# CREATE TABLES ----------------------------
-# WORKS
+# CREATE TABLES
+# ----------------------------
 def query_create_tables(server_name: DBConnString, table_queries: list) -> None:
     try:
         if connect(server_name) is None:
@@ -102,7 +104,8 @@ def query_create_tables(server_name: DBConnString, table_queries: list) -> None:
         print(f"Error creating data: {e}")
 
 
-# READ TABLES ----------------------------
+# READ TABLES
+# ----------------------------
 def query_read_row(server_name: DBConnString, table: str, row_number: int) -> None:
     with connect(server_name).cursor as cursor:
         row = cursor.execute(f'SELECT * FROM {table} WHERE rowid = ?', (row_number,))
@@ -117,9 +120,8 @@ def query_read_table(server_name: DBConnString, table: str) -> None:
             print(row)
 
 
-# GET ----------------------------
-
-
+# GET TABLES
+# ----------------------------
 # Works
 def query_get_table_names(server_name: DBConnString):
     sql_query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'"
@@ -164,7 +166,8 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
         return data
 
 
-# UPDATE TABLES ----------------------------
+# UPDATE
+# ----------------------------
 # test this if it works
 def query_update_row():
     pass
@@ -186,7 +189,9 @@ def query_update_cell(server_name: DBConnString, table_name: str,
         print(f"An unexpected error occurred: {e}")
 
 
-# DELETE --------------------------------
+# DELETE
+# --------------------------------
+
 # WORKS
 def query_delete_all_tables(server_name: DBConnString):
     try:
@@ -225,6 +230,8 @@ def query_delete_row(server_name: DBConnString, table_name: str, row_number: int
         connect(server_name).commit()
 
 
+# PUT
+# ----------------------------------------------
 def query_put_row(server_name: DBConnString, table_name: str, **kwargs) -> None:
     # Extract columns and values from kwargs
     columns = ', '.join(kwargs.keys())
@@ -245,7 +252,8 @@ def query_put_row(server_name: DBConnString, table_name: str, **kwargs) -> None:
         print(f"An unexpected error occurred: {e}")
 
 
-# Aux functions ------------------------
+# Aux functions
+# ------------------------
 def query_get_last_id_value(server_name: DBConnString, table_name: str) -> int:
     sql_query = f"SELECT TOP 1 id FROM {table_name} ORDER BY id DESC"
     try:
