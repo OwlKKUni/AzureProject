@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from SQL.queries import *
+from decimal import Decimal
 
 app = Flask(__name__)
 
@@ -37,7 +38,14 @@ def data_option1():
     data = query_get_data_from_table(Server1, 'combat')
     columns = data[0]
     rows = data[1:]
-    return render_template('data/combat.html', columns=columns, data=rows)
+
+    # Convert Decimal values to floats
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+
+    print(f"Columns: {columns}")  # Debugging: print columns
+    print(f"Rows: {rows}")  # Debugging: print rows
+
+    return render_template('data/combat.html', columns=columns, rows=rows)
 
 
 @app.route('/currency_gained')
@@ -45,7 +53,10 @@ def data_option2():
     data = query_get_data_from_table(Server1, 'currency_gained')
     columns = data[0]
     rows = data[1:]
-    return render_template('data/currency_gained.html', columns=columns, data=rows)
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/currency_gained.html', columns=columns, rows=rows)
 
 
 @app.route('/objectives_completed')
@@ -53,7 +64,10 @@ def data_option3():
     data = query_get_data_from_table(Server1, 'objectives_completed')
     columns = data[0]
     rows = data[1:]
-    return render_template('data/objectives_completed.html', columns=columns, data=rows)
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/objectives_completed.html', columns=columns, rows=rows)
 
 
 @app.route('/samples_gained')
@@ -61,7 +75,10 @@ def data_option4():
     data = query_get_data_from_table(Server1, 'samples_gained')
     columns = data[0]
     rows = data[1:]
-    return render_template('data/samples_gained.html', columns=columns, data=rows)
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/samples_gained.html', columns=columns, rows=rows)
 
 
 @app.route('/input_combat')

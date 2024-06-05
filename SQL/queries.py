@@ -163,6 +163,7 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
         columns = [column[0] for column in cursor.description]
         rows = cursor.fetchall()
         data = [columns] + [list(row) for row in rows]
+        print(f"Data fetched from table {table}: {data}")  # For debug
         return data
 
 
