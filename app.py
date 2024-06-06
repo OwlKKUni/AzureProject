@@ -1,288 +1,305 @@
-import os
-import pyodbc
+from flask import Flask, render_template, request
+from SQL.queries import *
+from decimal import Decimal
+
+app = Flask(__name__)
 
 
-class DBConnString:
-    def __init__(self, server, database, username, password, driver):
-        self.server = server
-        self.database = database
-        self.username = username
-        self.password = password
-        self.driver = driver
-        #
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 
-class SQLQuery:
-    def __init__(self, table_name, **kwargs):
-        self.table_name = table_name
-        self.columns = kwargs
+@app.route('/dive')
+def dive():
+    table_names = query_get_table_names(Server1)
+    max_id = max(query_get_last_id_value(Server1, table) for table in table_names)
+    data = {}
+    for table in table_names:
+        data[table] = query_get_data_by_id(Server1, table, max_id)
 
-    def add_column(self, column_name, column_type):
-        self.columns[column_name] = column_type
-
-    def generate_query(self):
-        query = f"CREATE TABLE {self.table_name} ("
-        column_definitions = [f"id INT PRIMARY KEY"]  # first column
-        for column_name, column_type in self.columns.items():
-            column_definitions.append(f"{column_name} {column_type}")
-        query += ", ".join(column_definitions)
-        query += ");"
-        return query
+    return render_template('dive.html', data=data, max_id=max_id)
 
 
-# CONN STRING FOR SERVERS
-Server1 = DBConnString(os.environ['AZURE_SERVER'],
-                       os.environ['AZURE_DATABASE'],
-                       os.environ['AZURE_SERVER_USERNAME'],
-                       os.environ['AZURE_DB_PASSWORD'],
-                       '{ODBC Driver 18 for SQL Server}')
-
-# QUERIES FOR CREATING EMPTY TABLES
-tquery_objectives = SQLQuery(table_name='objectives_completed',
-                             main_objectives='INT',
-                             optional_objectives='INT',
-                             helldivers_extracted='INT',
-                             outposts_destroyed_light='INT',
-                             outposts_destroyed_medium='INT',
-                             outposts_destroyed_heavy='INT',
-                             mission_time_remaining='TIME'
-                             ).generate_query()
-
-tquery_samples = SQLQuery(table_name='samples_gained',
-                          green_samples='INT',
-                          orange_samples='INT',
-                          violet_samples='INT'
-                          ).generate_query()
-
-tquery_currency = SQLQuery(table_name='currency_gained',
-                           requisition='INT',
-                           medals='INT',
-                           xp='INT'
-                           ).generate_query()
-
-tquery_combat = SQLQuery(table_name='combat',
-                         kills='INT',
-                         accuracy="DECIMAL(5,2)",
-                         shots_fired='INT',
-                         deaths='INT',
-                         stims_used='INT',
-                         accidentals='INT',
-                         samples_extracted='INT',
-                         stratagems_used='INT',
-                         melee_kills='INT',
-                         times_reinforcing='INT',
-                         friendly_fire_damage='INT',
-                         distance_travelled='INT',
-                         ).generate_query()
+@app.route('/all_dives')
+def all_dives():
+    table_names = query_get_table_names(Server1)
+    data = {table: query_get_data_from_table(Server1, table) for table in table_names}
+    return render_template('all_dives.html', data=data)
 
 
-def connect(conn_string):
-    try:
-        conn = pyodbc.connect(f'DRIVER={conn_string.driver};SERVER={conn_string.server};'
-                              f'DATABASE={conn_string.database};UID={conn_string.username};'
-                              f'PWD={conn_string.password}')
-        return conn
-    except pyodbc.Error as e:
-        print(f"Error connecting to the database: {e}")
-        return None
+@app.route('/update_last_dive/<table>', methods=['POST'])
+def update_last_dive(table):
+    id_ = query_get_last_id_value(Server1, table)
+    if id_ is None:
+        return 'No data to update'
+
+    # Extract form data
+    data = {}
+    for column in request.form:
+        data[column] = request.form[column]
+
+    query_update_row(Server1, table, id_, **data)
+
+    return render_template('all_dives.html')
 
 
-# CREATE TABLES
-# ----------------------------
-def query_create_tables(server_name: DBConnString, table_queries: list) -> None:
-    try:
-        if connect(server_name) is None:
-            print("Failed to connect to the database.")
-            return
+@app.route('/delete_last_dive/<table>', methods=['POST'])
+def delete_last_dive(table):
+    id_ = query_get_last_id_value(Server1, table)
+    if id_ is None:
+        return 'No data to delete'
 
-        with connect(server_name).cursor() as cursor:
-            for table_query in table_queries:
-                cursor.execute(table_query)
-                print(f'Table "{table_query.split(" ")[2]}" created')
-            connect(server_name).commit()
+    query_delete_row(Server1, table, id_)
 
-    except pyodbc.Error as e:
-        print(f"Error creating data: {e}")
+    return render_template('all_dives.html')
 
 
-# READ TABLES
-# ----------------------------
-def query_read_row(server_name: DBConnString, table: str, row_number: int) -> None:
-    with connect(server_name).cursor as cursor:
-        row = cursor.execute(f'SELECT * FROM {table} WHERE rowid = ?', (row_number,))
-        print(row)
+@app.route('/combat')
+def data_option1():
+    data = query_get_data_from_table(Server1, 'combat')
+    columns = data[0]
+    rows = data[1:]
+
+    # Convert Decimal values to floats
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+
+    # print(f"Columns: {columns}")  # Debugging: print columns
+    # print(f"Rows: {rows}")  # Debugging: print rows
+
+    return render_template('data/combat.html', columns=columns, rows=rows)
 
 
-def query_read_table(server_name: DBConnString, table: str) -> None:
-    with connect(server_name).cursor as cursor:
-        cursor.execute(f'SELECT * FROM {table}')
-        rows = cursor.fetchall()
-        for row in rows:
-            print(row)
+@app.route('/currency_gained')
+def data_option2():
+    data = query_get_data_from_table(Server1, 'currency_gained')
+    columns = data[0]
+    rows = data[1:]
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    # print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/currency_gained.html', columns=columns, rows=rows)
 
 
-# GET TABLES
-# ----------------------------
-# Works
-def query_get_table_names(server_name: DBConnString):
-    sql_query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE='BASE TABLE'"
-
-    try:
-        with connect(server_name).cursor() as cursor:
-            cursor.execute(sql_query)
-            table_names = [row.TABLE_NAME for row in cursor.fetchall()]
-
-        if table_names:
-            return table_names
-
-        else:
-            print("No data found.")
-            return []
-
-    except pyodbc.Error as e:
-        print(f"Error executing SQL query: {e}")
-        return []
+@app.route('/objectives_completed')
+def data_option3():
+    data = query_get_data_from_table(Server1, 'objectives_completed')
+    columns = data[0]
+    rows = data[1:]
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    # print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/objectives_completed.html', columns=columns, rows=rows)
 
 
-# WORKS
-def query_get_table_column_names(server_name: DBConnString, table: str) -> list:
-    data = []
-    with connect(server_name).cursor() as cursor:
-        cursor.execute(f'SELECT * FROM {table}')
-        columns = [column[0] for column in cursor.description]
-        rows = cursor.fetchall()
-        data.append(columns)
-        for row in rows:
-            data.append(list(row))
-    return data
+@app.route('/samples_gained')
+def data_option4():
+    data = query_get_data_from_table(Server1, 'samples_gained')
+    columns = data[0]
+    rows = data[1:]
+    # Convert Decimal values to floats if necessary
+    rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
+    # print(f"Columns: {columns}\nRows: {rows}")
+    return render_template('data/samples_gained.html', columns=columns, rows=rows)
 
 
-#
-def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
-    with connect(server_name).cursor() as cursor:
-        cursor.execute(f"SELECT * FROM {table}")
-        columns = [column[0] for column in cursor.description]
-        rows = cursor.fetchall()
-        data = [columns] + [list(row) for row in rows]
-        return data
+@app.route('/input_combat')
+def data_option5():
+    return render_template('inputs/input_combat.html')
 
 
-# UPDATE
-# ----------------------------
-# test this if it works
-
-def query_update_cell(server_name: DBConnString, table_name: str, column_name: str, id_: int, value: any) -> None:
-    sql_query = f"UPDATE {table_name} SET {column_name} = ? WHERE id = ?"
-
-    try:
-        with connect(server_name).cursor() as cursor:
-            cursor.execute(sql_query, (value, id_))
-            connect(server_name).commit()
-        print(f'Table "{table_name}" updated')
-
-    except pyodbc.Error as e:
-        print(f"Error updating table '{table_name}': {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+@app.route('/input_currency_gained')
+def data_option6():
+    return render_template('inputs/input_currency_gained.html')
 
 
-def query_update_row(server_name: DBConnString, table_name: str, id_: int, data: dict) -> None:
-    for column_name, value in data.items():
-        query_update_cell(server_name, table_name, column_name, id_, value)
+@app.route('/input_objectives_completed')
+def data_option7():
+    return render_template('inputs/input_objectives_completed.html')
 
 
-# DELETE
-# --------------------------------
-
-# WORKS
-def query_delete_all_tables(server_name: DBConnString):
-    try:
-        table_names = query_get_table_names(server_name)
-        if table_names:
-            for table_name in table_names:
-                query_delete_table(server_name, table_name)
-        else:
-            print("No data found to delete.")
-
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+@app.route('/input_samples_gained')
+def data_option8():
+    return render_template('inputs/input_samples_gained.html')
 
 
-# WORKS
-def query_delete_table(server_name: DBConnString, table_name: str) -> None:
-    sql_query = f"IF OBJECT_ID('{table_name}', 'U') IS NOT NULL DROP TABLE {table_name}"
+@app.route('/submit_data_combat', methods=['POST'])
+def submit_data_combat():
+    id_ = query_get_last_id_value(Server1, 'combat')
+    if id_ is None:
+        id_ = 1
+    else:
+        id_ = int(id_) + 1
 
-    try:
-        with connect(server_name).cursor() as cursor:
-            cursor.execute(sql_query)
-            connect(server_name).commit()
-        print(f'Table "{table_name}" deleted')
-
-    except pyodbc.Error as e:
-        print(f"Error deleting table '{table_name}': {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-
-def query_delete_row(server_name: DBConnString, table_name: str, row_number: int) -> None:
-    sql_query = f"DELETE FROM {table_name} WHERE rowid = {row_number}"
-
-    with connect(server_name).cursor() as cursor:
-        cursor.execute(sql_query)
-        connect(server_name).commit()
-
-
-# PUT
-# ----------------------------------------------
-def query_put_row(server_name: DBConnString, table_name: str, **kwargs) -> None:
-    # Extract columns and values from kwargs
-    columns = ', '.join(kwargs.keys())
-    values_placeholders = ', '.join(['?'] * len(kwargs))
-    values = tuple(kwargs.values())
-
-    sql_query = f"INSERT INTO {table_name} ({columns}) VALUES ({values_placeholders})"
-
-    try:
-        with connect(server_name).cursor() as cursor:
-            cursor.execute(sql_query, values)
-            connect(server_name).commit()
-        print(f"Row inserted into table '{table_name}'")
-
-    except pyodbc.Error as e:
-        print(f"Error inserting row into table '{table_name}': {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-
-# Aux functions
-# ------------------------
-def query_get_last_id_value(server_name: DBConnString, table_name: str) -> int:
-    sql_query = f"SELECT TOP 1 id FROM {table_name} ORDER BY id DESC"
-    try:
-        with connect(server_name).cursor() as cursor:
-            cursor.execute(sql_query)
-            result = cursor.fetchone()
-            return result[0] if result else None
-
-    except pyodbc.Error as e:
-        print(f"Error occurred: {e}")
-        return None
-
-
-# dict {columns: [], rows: [()]}
-def query_get_data_by_id(server_name: DBConnString, table: str, id_value: int) -> dict:
+    # Extract form data
     data = {
-        "columns": [],
-        "rows": []
+        'kills': int(request.form['kills']),
+        'accuracy': float(request.form['accuracy']),
+        'shots_fired': int(request.form['shots_fired']),
+        'deaths': int(request.form['deaths']),
+        'stims_used': int(request.form['stims_used']),
+        'accidentals': int(request.form['accidentals']),
+        'samples_extracted': int(request.form['samples_extracted']),
+        'stratagems_used': int(request.form['stratagems_used']),
+        'melee_kills': int(request.form['melee_kills']),
+        'times_reinforcing': int(request.form['times_reinforcing']),
+        'friendly_fire_damage': int(request.form['friendly_fire_damage']),
+        'distance_travelled': int(request.form['distance_travelled']),
     }
-    with connect(server_name).cursor() as cursor:
-        cursor.execute(f'SELECT * FROM {table} WHERE id = {id_value}')
-        columns = [column[0] for column in cursor.description]
-        rows = cursor.fetchall()
-        data["columns"] = columns
-        data["rows"] = [row for row in rows]
-    return data
+
+    query_put_row(Server1, 'combat', id=id_, **data)
+    return 'Combat data submitted successfully'
 
 
-if __name__ == "__main__":
-    print(query_get_data_by_id(Server1, 'objectives_completed', 1))
+@app.route('/submit_data_currency_gained', methods=['POST'])
+def submit_data_currency_gained():
+    id_ = query_get_last_id_value(Server1, 'currency_gained')
+    if id_ is None:
+        id_ = 1
+    else:
+        id_ = int(id_) + 1
+
+    data = {
+        'requisition': int(request.form['requisition']),
+        'medals': int(request.form['medals']),
+        'xp': int(request.form['xp'])
+    }
+
+    query_put_row(Server1, 'currency_gained', id=id_, **data)
+    return 'Currency gained data submitted successfully'
+
+
+@app.route('/submit_data_objectives_completed', methods=['POST'])
+def submit_data_objectives_completed():
+    id_ = query_get_last_id_value(Server1, 'objectives_completed')
+    if id_ is None:
+        id_ = 1
+    else:
+        id_ = int(id_) + 1
+
+    data = {
+        'main_objectives': int(request.form['main_objectives']),
+        'optional_objectives': int(request.form['optional_objectives']),
+        'helldivers_extracted': int(request.form['helldivers_extracted']),
+        'outposts_destroyed_light': int(request.form['outposts_destroyed_light']),
+        'outposts_destroyed_medium': int(request.form['outposts_destroyed_medium']),
+        'outposts_destroyed_heavy': int(request.form['outposts_destroyed_heavy']),
+        'mission_time_remaining': request.form['mission_time_remaining']
+    }
+
+    query_put_row(Server1, 'objectives_completed', id=id_, **data)
+    return 'Objectives completed data submitted successfully'
+
+
+@app.route('/submit_data_samples_gained', methods=['POST'])
+def submit_data_samples_gained():
+    id_ = query_get_last_id_value(Server1, 'samples_gained')
+    if id_ is None:
+        id_ = 1
+    else:
+        id_ = int(id_) + 1
+
+    data = {
+        'green_samples': int(request.form['green_samples']),
+        'orange_samples': int(request.form['orange_samples']),
+        'violet_samples': int(request.form['violet_samples']),
+    }
+
+    query_put_row(Server1, 'samples_gained', id=id_, **data)
+    return 'Samples gained data submitted successfully'
+
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@app.route('/update_data_combat', methods=['POST'])
+def update_data_combat():
+    id_ = query_get_last_id_value(Server1, 'combat')
+    if id_ is None:
+        return 'No rows to update in combat data'
+
+    data = {
+        'kills': int(request.form['kills']),
+        'accuracy': float(request.form['accuracy']),
+        'shots_fired': int(request.form['shots_fired']),
+        'deaths': int(request.form['deaths']),
+        'stims_used': int(request.form['stims_used']),
+        'accidentals': int(request.form['accidentals']),
+        'samples_extracted': int(request.form['samples_extracted']),
+        'stratagems_used': int(request.form['stratagems_used']),
+        'melee_kills': int(request.form['melee_kills']),
+        'times_reinforcing': int(request.form['times_reinforcing']),
+        'friendly_fire_damage': int(request.form['friendly_fire_damage']),
+        'distance_travelled': int(request.form['distance_travelled']),
+    }
+
+    query_update_row(Server1, 'combat', id_, data)
+    return 'Combat data updated successfully'
+
+
+@app.route('/update_data_currency_gained', methods=['POST'])
+def update_data_currency_gained():
+    id_ = query_get_last_id_value(Server1, 'currency_gained')
+    if id_ is None:
+        return 'No rows to update in currency gained data'
+
+    data = {
+        'requisition': int(request.form['requisition']),
+        'medals': int(request.form['medals']),
+        'xp': int(request.form['xp'])
+    }
+
+    query_update_row(Server1, 'currency_gained', id_, data)
+    return 'Currency gained data updated successfully'
+
+
+@app.route('/update_data_objectives_completed', methods=['POST'])
+def update_data_objectives_completed():
+    id_ = query_get_last_id_value(Server1, 'objectives_completed')
+    if id_ is None:
+        return 'No rows to update in objectives completed data'
+
+    data = {
+        'main_objectives': int(request.form['main_objectives']),
+        'optional_objectives': int(request.form['optional_objectives']),
+        'helldivers_extracted': int(request.form['helldivers_extracted']),
+        'outposts_destroyed_light': int(request.form['outposts_destroyed_light']),
+        'outposts_destroyed_medium': int(request.form['outposts_destroyed_medium']),
+        'outposts_destroyed_heavy': int(request.form['outposts_destroyed_heavy']),
+        'mission_time_remaining': request.form['mission_time_remaining']
+    }
+
+    query_update_row(Server1, 'objectives_completed', id_, data)
+    return 'Objectives completed data updated successfully'
+
+
+@app.route('/update_data_samples_gained', methods=['POST'])
+def update_data_samples_gained():
+    id_ = query_get_last_id_value(Server1, 'samples_gained')
+    if id_ is None:
+        return 'No rows to update in samples gained data'
+
+    data = {
+        'green_samples': int(request.form['green_samples']),
+        'orange_samples': int(request.form['orange_samples']),
+        'violet_samples': int(request.form['violet_samples']),
+    }
+
+    query_update_row(Server1, 'samples_gained', id_, data)
+    return 'Samples gained data updated successfully'
+
+
+@app.route('/delete_last_row/<table_name>', methods=['POST'])
+def delete_last_row(table_name):
+    id_ = query_get_last_id_value(Server1, table_name)
+    if id_ is None:
+        return f'No rows to delete in {table_name} data'
+
+    query_delete_row(Server1, table_name, id_)
+    return f'Last row in {table_name} data deleted successfully'
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
