@@ -142,13 +142,13 @@ def submit_data_combat():
         'samples_extracted': int(request.form['samples_extracted']),
         'stratagems_used': int(request.form['stratagems_used']),
         'melee_kills': int(request.form['melee_kills']),
-        'times_reinforcing': int(request.form['times_reinforcing']),
+        'times_reinforcing_': int(request.form['times_reinforcing_']),
         'friendly_fire_damage': int(request.form['friendly_fire_damage']),
         'distance_travelled': int(request.form['distance_travelled']),
     }
 
     query_put_row(Server1, 'combat', id=id_, **data)
-    return 'Combat data submitted successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/submit_data_currency_gained', methods=['POST'])
@@ -166,7 +166,7 @@ def submit_data_currency_gained():
     }
 
     query_put_row(Server1, 'currency_gained', id=id_, **data)
-    return 'Currency gained data submitted successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/submit_data_objectives_completed', methods=['POST'])
@@ -188,7 +188,7 @@ def submit_data_objectives_completed():
     }
 
     query_put_row(Server1, 'objectives_completed', id=id_, **data)
-    return 'Objectives completed data submitted successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/submit_data_samples_gained', methods=['POST'])
@@ -206,7 +206,7 @@ def submit_data_samples_gained():
     }
 
     query_put_row(Server1, 'samples_gained', id=id_, **data)
-    return 'Samples gained data submitted successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/about')
@@ -236,7 +236,7 @@ def update_data_combat():
     }
 
     query_update_row(Server1, 'combat', id_, data)
-    return 'Combat data updated successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/update_data_currency_gained', methods=['POST'])
@@ -252,7 +252,7 @@ def update_data_currency_gained():
     }
 
     query_update_row(Server1, 'currency_gained', id_, data)
-    return 'Currency gained data updated successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/update_data_objectives_completed', methods=['POST'])
@@ -272,7 +272,7 @@ def update_data_objectives_completed():
     }
 
     query_update_row(Server1, 'objectives_completed', id_, data)
-    return 'Objectives completed data updated successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/update_data_samples_gained', methods=['POST'])
@@ -288,7 +288,7 @@ def update_data_samples_gained():
     }
 
     query_update_row(Server1, 'samples_gained', id_, data)
-    return 'Samples gained data updated successfully'
+    return render_template('submit_success.html')
 
 
 @app.route('/delete_last_row/<table_name>', methods=['POST'])
@@ -298,7 +298,7 @@ def delete_last_row(table_name):
         return f'No rows to delete in {table_name} data'
 
     query_delete_row(Server1, table_name, id_)
-    return f'Last row in {table_name} data deleted successfully'
+    return render_template('submit_success.html')
 
 
 if __name__ == '__main__':
