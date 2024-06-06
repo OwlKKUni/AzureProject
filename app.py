@@ -10,11 +10,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/input')
-def input():
-    return render_template('input.html')
-
-
 @app.route('/dive')
 def dive():
     table_names = query_get_table_names(Server1)
@@ -33,6 +28,33 @@ def all_dives():
     return render_template('all_dives.html', data=data)
 
 
+@app.route('/update_last_dive/<table>', methods=['POST'])
+def update_last_dive(table):
+    id_ = query_get_last_id_value(Server1, table)
+    if id_ is None:
+        return 'No data to update'
+
+    # Extract form data
+    data = {}
+    for column in request.form:
+        data[column] = request.form[column]
+
+    query_update_row(Server1, table, id_, **data)
+
+    return render_template('all_dives.html')
+
+
+@app.route('/delete_last_dive/<table>', methods=['POST'])
+def delete_last_dive(table):
+    id_ = query_get_last_id_value(Server1, table)
+    if id_ is None:
+        return 'No data to delete'
+
+    query_delete_row(Server1, table, id_)
+
+    return render_template('all_dives.html')
+
+
 @app.route('/combat')
 def data_option1():
     data = query_get_data_from_table(Server1, 'combat')
@@ -42,8 +64,8 @@ def data_option1():
     # Convert Decimal values to floats
     rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
 
-    print(f"Columns: {columns}")  # Debugging: print columns
-    print(f"Rows: {rows}")  # Debugging: print rows
+    # print(f"Columns: {columns}")  # Debugging: print columns
+    # print(f"Rows: {rows}")  # Debugging: print rows
 
     return render_template('data/combat.html', columns=columns, rows=rows)
 
@@ -55,7 +77,7 @@ def data_option2():
     rows = data[1:]
     # Convert Decimal values to floats if necessary
     rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
-    print(f"Columns: {columns}\nRows: {rows}")
+    # print(f"Columns: {columns}\nRows: {rows}")
     return render_template('data/currency_gained.html', columns=columns, rows=rows)
 
 
@@ -66,7 +88,7 @@ def data_option3():
     rows = data[1:]
     # Convert Decimal values to floats if necessary
     rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
-    print(f"Columns: {columns}\nRows: {rows}")
+    # print(f"Columns: {columns}\nRows: {rows}")
     return render_template('data/objectives_completed.html', columns=columns, rows=rows)
 
 
@@ -77,7 +99,7 @@ def data_option4():
     rows = data[1:]
     # Convert Decimal values to floats if necessary
     rows = [[float(cell) if isinstance(cell, Decimal) else cell for cell in row] for row in rows]
-    print(f"Columns: {columns}\nRows: {rows}")
+    # print(f"Columns: {columns}\nRows: {rows}")
     return render_template('data/samples_gained.html', columns=columns, rows=rows)
 
 
@@ -190,6 +212,93 @@ def submit_data_samples_gained():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+
+@app.route('/update_data_combat', methods=['POST'])
+def update_data_combat():
+    id_ = query_get_last_id_value(Server1, 'combat')
+    if id_ is None:
+        return 'No rows to update in combat data'
+
+    data = {
+        'kills': int(request.form['kills']),
+        'accuracy': float(request.form['accuracy']),
+        'shots_fired': int(request.form['shots_fired']),
+        'deaths': int(request.form['deaths']),
+        'stims_used': int(request.form['stims_used']),
+        'accidentals': int(request.form['accidentals']),
+        'samples_extracted': int(request.form['samples_extracted']),
+        'stratagems_used': int(request.form['stratagems_used']),
+        'melee_kills': int(request.form['melee_kills']),
+        'times_reinforcing': int(request.form['times_reinforcing']),
+        'friendly_fire_damage': int(request.form['friendly_fire_damage']),
+        'distance_travelled': int(request.form['distance_travelled']),
+    }
+
+    query_update_row(Server1, 'combat', id_, data)
+    return 'Combat data updated successfully'
+
+
+@app.route('/update_data_currency_gained', methods=['POST'])
+def update_data_currency_gained():
+    id_ = query_get_last_id_value(Server1, 'currency_gained')
+    if id_ is None:
+        return 'No rows to update in currency gained data'
+
+    data = {
+        'requisition': int(request.form['requisition']),
+        'medals': int(request.form['medals']),
+        'xp': int(request.form['xp'])
+    }
+
+    query_update_row(Server1, 'currency_gained', id_, data)
+    return 'Currency gained data updated successfully'
+
+
+@app.route('/update_data_objectives_completed', methods=['POST'])
+def update_data_objectives_completed():
+    id_ = query_get_last_id_value(Server1, 'objectives_completed')
+    if id_ is None:
+        return 'No rows to update in objectives completed data'
+
+    data = {
+        'main_objectives': int(request.form['main_objectives']),
+        'optional_objectives': int(request.form['optional_objectives']),
+        'helldivers_extracted': int(request.form['helldivers_extracted']),
+        'outposts_destroyed_light': int(request.form['outposts_destroyed_light']),
+        'outposts_destroyed_medium': int(request.form['outposts_destroyed_medium']),
+        'outposts_destroyed_heavy': int(request.form['outposts_destroyed_heavy']),
+        'mission_time_remaining': request.form['mission_time_remaining']
+    }
+
+    query_update_row(Server1, 'objectives_completed', id_, data)
+    return 'Objectives completed data updated successfully'
+
+
+@app.route('/update_data_samples_gained', methods=['POST'])
+def update_data_samples_gained():
+    id_ = query_get_last_id_value(Server1, 'samples_gained')
+    if id_ is None:
+        return 'No rows to update in samples gained data'
+
+    data = {
+        'green_samples': int(request.form['green_samples']),
+        'orange_samples': int(request.form['orange_samples']),
+        'violet_samples': int(request.form['violet_samples']),
+    }
+
+    query_update_row(Server1, 'samples_gained', id_, data)
+    return 'Samples gained data updated successfully'
+
+
+@app.route('/delete_last_row/<table_name>', methods=['POST'])
+def delete_last_row(table_name):
+    id_ = query_get_last_id_value(Server1, table_name)
+    if id_ is None:
+        return f'No rows to delete in {table_name} data'
+
+    query_delete_row(Server1, table_name, id_)
+    return f'Last row in {table_name} data deleted successfully'
 
 
 if __name__ == '__main__':

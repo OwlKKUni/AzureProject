@@ -169,17 +169,13 @@ def query_get_data_from_table(server_name: DBConnString, table: str) -> list:
 # UPDATE
 # ----------------------------
 # test this if it works
-def query_update_row():
-    pass
 
-
-def query_update_cell(server_name: DBConnString, table_name: str,
-                      column_name: str, row_number: int, value: any) -> None:
-    sql_query = f"UPDATE {table_name} SET {column_name} = {value} WHERE {row_number} = ?"
+def query_update_cell(server_name: DBConnString, table_name: str, column_name: str, id_: int, value: any) -> None:
+    sql_query = f"UPDATE {table_name} SET {column_name} = ? WHERE id = ?"
 
     try:
-        with connect(server_name).cursor as cursor:
-            cursor.execute(sql_query, (value, row_number))
+        with connect(server_name).cursor() as cursor:
+            cursor.execute(sql_query, (value, id_))
             connect(server_name).commit()
         print(f'Table "{table_name}" updated')
 
@@ -187,6 +183,11 @@ def query_update_cell(server_name: DBConnString, table_name: str,
         print(f"Error updating table '{table_name}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+def query_update_row(server_name: DBConnString, table_name: str, id_: int, data: dict) -> None:
+    for column_name, value in data.items():
+        query_update_cell(server_name, table_name, column_name, id_, value)
 
 
 # DELETE
