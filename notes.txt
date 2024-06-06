@@ -1,7 +1,0 @@
-def query_create_tables(server_name: str, table_queries: list) -> None:
-    with connect(server_name).cursor() as cursor:
-        for table_query in table_queries:
-            cursor.execute(table_query)
-        connect(server_name).commit()
-        connect(server_name).close()
-    print('Empty tables created')
