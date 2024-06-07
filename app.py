@@ -44,17 +44,6 @@ def update_last_dive(table):
     return render_template('all_dives.html')
 
 
-@app.route('/delete_last_dive/<table>', methods=['POST'])
-def delete_last_dive(table):
-    id_ = query_get_last_id_value(Server1, table)
-    if id_ is None:
-        return 'No data to delete'
-
-    query_delete_row(Server1, table, id_)
-
-    return render_template('all_dives.html')
-
-
 @app.route('/combat')
 def data_option1():
     data = query_get_data_from_table(Server1, 'combat')
@@ -299,6 +288,19 @@ def delete_last_row(table_name):
 
     query_delete_row(Server1, table_name, id_)
     return render_template('submit_success.html')
+
+
+@app.route('/delete_last_dive', methods=['POST'])
+def delete_last_dive():
+    # Get the maximum ID value across all tables
+    max_id = max(query_get_last_id_value(Server1, table) for table in query_get_table_names(Server1))
+
+    if max_id is not None:
+        # Delete rows with the maximum ID value from all tables
+        for table in query_get_table_names(Server1):
+            query_delete_row(Server1, table, max_id)
+
+    return render_template('submit_success_all_dives.html', redirect_url='/all_dives')
 
 
 if __name__ == '__main__':
